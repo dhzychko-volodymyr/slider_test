@@ -75,8 +75,9 @@ class Test_slider_vd_Public {
 
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/test_slider_vd-public.css', array(), $this->version, 'all' );
 
-		// Enqueue Swiper CSS
-		wp_enqueue_style( 'swiper-css', 'https://unpkg.com/swiper/swiper-bundle.min.css' );
+		// Enqueue Slick CSS
+		wp_enqueue_style( 'slick-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css' );
+		wp_enqueue_style( 'slick-theme-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css' );
 
 	}
 
@@ -101,8 +102,8 @@ class Test_slider_vd_Public {
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/test_slider_vd-public.js', array( 'jquery' ), $this->version, false );
 
-		// Enqueue Swiper JS
-		wp_enqueue_script( 'swiper-js', 'https://unpkg.com/swiper/swiper-bundle.min.js', array(), null, true );
+		// Enqueue Slick JS
+		wp_enqueue_script( 'slick-js', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js', array( 'jquery' ), null, true );
 
 	}
 
@@ -112,7 +113,7 @@ class Test_slider_vd_Public {
 	 * [flormar-test-slider]
      */
     public function register_slider_shortcode() {
-        add_shortcode( 'test_slider_vd', array( $this, 'display_slider' ) );
+        add_shortcode( 'flormar-test-slider', array( $this, 'display_slider' ) );
     }
 
 	/**
@@ -120,12 +121,53 @@ class Test_slider_vd_Public {
 	 *
 	 * @return string
 	 */
-	public function display_slider() {
-		ob_start();
+	public function display_slider($atts) {
+		$args = array(
+			'post_type' => 'product',
+			'posts_per_page' => -1
+		);
 
-		?>
-		<?php
-		return ob_get_clean();
+		$products = get_posts( $args );
+		$maybe_filtered_products = array();
+
+		if ( ! empty( $products ) ) {
+			
+			foreach ( $products as $product_post ) {
+				$product = wc_get_product( $product_post->ID );
+				
+				if ( isset( $atts['max-price'] ) ) {
+					if ( $product->get_price() > $atts['max-price'] ) {
+						continue;
+					}
+				}
+		
+				if ( isset( $atts['min-price'] ) ) {
+					if ( $product->get_price() < $atts['min-price'] ) {
+						continue;
+					}
+				}
+
+				$maybe_filtered_products[] = $product;
+			}
+		}
+
+		if ( ! empty( $maybe_filtered_products ) ) {
+			ob_start();
+			?>
+			<div class="slider-title">המוצרים הנמכרים ביותר </div>
+			<div class="slick-slider">
+				<?php foreach ( $maybe_filtered_products as $product ) : ?>
+					<div class="slick-slide">
+						<?php echo $product->get_image(); ?>
+						<h2><?php echo $product->get_name(); ?></h2>
+						<p><?php echo wc_price( $product->get_price() ); ?></p>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<?php
+			return ob_get_clean();
+		}
+
 	}
 
 }
