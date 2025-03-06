@@ -3,7 +3,7 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       https://https://www.linkedin.com/in/volodymyr-dhzychko-865348171/
+ * @link       https://www.linkedin.com/in/volodymyr-dhzychko-865348171/
  * @since      1.0.0
  *
  * @package    Test_slider_vd
@@ -73,12 +73,11 @@ class Test_slider_vd_Public {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/test_slider_vd-public.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name . '-public', plugin_dir_url( __FILE__ ) . 'css/test_slider_vd-public.css', array(), $this->version, 'all' );
 
-		// Enqueue Slick CSS
-		wp_enqueue_style( 'slick-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css' );
-		wp_enqueue_style( 'slick-theme-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css' );
-
+		// Enqueue Slick CSS locally
+		wp_enqueue_style( $this->plugin_name . '-slick', plugin_dir_url( __FILE__ ) . 'css/slick.css', array(), $this->version, 'all' );
+		// wp_enqueue_style( $this->plugin_name . '-slick-theme', plugin_dir_url( __FILE__ ) . 'css/slick-theme.css', array(), $this->version, 'all' );
 	}
 
 	/**
@@ -100,10 +99,18 @@ class Test_slider_vd_Public {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/test_slider_vd-public.js', array( 'jquery' ), $this->version, false );
 
-		// Enqueue Slick JS
-		wp_enqueue_script( 'slick-js', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js', array( 'jquery' ), null, true );
+
+		// Enqueue Slick JS locally
+		wp_enqueue_script( $this->plugin_name . '-slick', plugin_dir_url( __FILE__ ) . 'js/slick.min.js', array( 'jquery' ), $this->version, false );
+
+		// Enqueue custom JS
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/test_slider_vd-public.js', array( 'jquery', $this->plugin_name . '-slick' ), $this->version, false );
+
+		// Localize script to pass image URLs
+		wp_localize_script( $this->plugin_name, 'flormar_slick_slider_params', array(
+			'arrow' => plugin_dir_url( __FILE__ ) . 'images/arrow.png'
+		));
 
 	}
 
@@ -119,6 +126,7 @@ class Test_slider_vd_Public {
 	/**
 	 * Display Swiper Slider.
 	 *
+	 * @param array $atts Shortcode attributes.
 	 * @return string
 	 */
 	public function display_slider($atts) {
@@ -154,15 +162,25 @@ class Test_slider_vd_Public {
 		if ( ! empty( $maybe_filtered_products ) ) {
 			ob_start();
 			?>
-			<div class="slider-title">המוצרים הנמכרים ביותר </div>
-			<div class="slick-slider">
-				<?php foreach ( $maybe_filtered_products as $product ) : ?>
-					<div class="slick-slide">
-						<?php echo $product->get_image(); ?>
-						<h2><?php echo $product->get_name(); ?></h2>
-						<p><?php echo wc_price( $product->get_price() ); ?></p>
+			<div class="test_slider_vd__slider-container">
+				<div class="test_slider_vd__slider-wrapper">
+					<div class="test_slider_vd__slider-title">המוצרים הנמכרים ביותר</div>
+					<div class="test_slider_vd__slick-slider">
+						<?php foreach ( $maybe_filtered_products as $product ) : ?>
+							<div>
+								<?php 
+								$image_id = $product->get_image_id(); 
+								$image_url = wp_get_attachment_image_url( $image_id, 'medium' );
+								// echo $image_url;
+								?>
+								<img src="<?php echo $image_url; ?>">
+								<hr>
+								<h2><?php echo $product->get_name(); ?></h2>
+								<p><?php echo wc_price( $product->get_price() ); ?></p>
+							</div>
+						<?php endforeach; ?>
 					</div>
-				<?php endforeach; ?>
+				</div>
 			</div>
 			<?php
 			return ob_get_clean();
